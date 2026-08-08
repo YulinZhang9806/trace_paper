@@ -81,6 +81,6 @@ The `merge_ARGs.py` script takes in one of the `yri_chr1_posterior_{0..299}.txt`
 # This would produce 300 posterior tree sequences sampled from SINGER for the whole chr1
 for i in {0..299}
 do
-    python merge_ARGs.py --file_table sbatch_files/yri_chr1_posterior_1.txt --output yri_chr1_${i}.tsz
+    python merge_ARGs.py --file_table sbatch_files/yri_chr1_posterior_${i}.txt --output yri_chr1_${i}.tsz
 done
 ```
