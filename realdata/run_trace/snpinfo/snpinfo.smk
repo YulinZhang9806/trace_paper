@@ -1,6 +1,7 @@
 #!python3
 
 from utils import SNPINFO
+import numpy as np
 
 
 rule snpinfo:
@@ -44,20 +45,20 @@ rule snpinfo_afr:
     output:
         txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}.txt",
     run:
-        SNPINFO().append_AFR_info(params.outpref, input.tkg_bcf, input.yri_poplabel, "AltAF_YRI", params.outpref)
+        SNPINFO().append_AFR_info(params.snpinfo, input.tkg_bcf, input.yri_poplabel, "AltAF_YRI", params.outpref)
 
 rule snpinfo_outgroup:
     """Get SNP info for whether they present in hmmix outgroup SNP list."""
     input:
         snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}.txt",
-        outgrouopfile = paths["hmmix_outgroup"],
+        outgroupfile = paths["hmmix_outgroup"],
     params:
         snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}",
         outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}",
     output:
         txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}.txt",
     run:
-        SNPINFO().append_outgroup_info(params.snpinfo, input.outgrouopfile, params.outpref)
+        SNPINFO().append_outgroup_info(params.snpinfo, input.outgroupfile, params.outpref)
 
 
 rule snpinfo_strictmask:
@@ -110,16 +111,13 @@ rule extract_mutage:
                 print(f"Error decompressing {input.trees[i]}: {e}")
                 sys.exit(1)
             chrom = params.chrom
-            out = ""
+            out = "chromosome\tposition\tmutation_age\n"
             for tree in ts.trees():
                 for mut in tree.mutations():
                     if tree.parent(mut.node) != tskit.NULL:
-                        out += f"{chrom}\t{int(ts.site(mut.site).position) - 1}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(tree.parent(mut.node))}\n"
+                        out += f"{chrom}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(tree.parent(mut.node))}\n"
                     else:
-                        out += f"{chrom}\t{int(ts.site(mut.site).position) - 1}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(mut.node)}\n"
-            out = "chromosome\tposition\tmutation_age\n"
-            for x in a:
-                out += f"{x.chrom}\t{x.end}\t{x[3]}\n"
+                        out += f"{chrom}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(mut.node)}\n"
             with open(output.mutage[i], 'w') as f:
                 f.write(out)
 
