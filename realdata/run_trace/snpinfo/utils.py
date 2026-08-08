@@ -144,12 +144,9 @@ class SNPINFO:
                 out += "\t".join([9] * len(archaic_samples)) + '\n'
                 continue # missing site
             if ginfo[4].upper() == str(s[2]) and (ginfo[5].upper() == str(s[3]) or ginfo[5] == '.'):
-                if len(str(s[5])) > 1: # ancestor not matching ref or alt, both ref and alt derived
-                    out += "\t".join([2] * len(archaic_samples)) + '\n'
-                else:
-                    for ars in archaic_samples:
-                        out += str(ginfo[arc_return_dict[ars]]) + '\t'
-                    out = out.strip('\t') + '\n'
+                for ars in archaic_samples:
+                    out += str(ginfo[arc_return_dict[ars]]) + '\t'
+                out = out.strip('\t') + '\n'
             else:
                 out += "\t".join(["REF_DONT_MATCH"] * len(archaic_samples)) + '\n'
         outfile=open(outpref + '.txt','w')
