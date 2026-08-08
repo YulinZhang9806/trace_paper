@@ -32,7 +32,7 @@ rule annotate_manifesto:
         snpinfo_pref=config["paths"]["manifesto_snpinfo_pref"],
     shell:
         """
-python scripts/annotate_manifesto.py --input {input.filtered_segments} --snpinfo-pref {params.snpinfo_pref} --output {output.manifesto_table}
+python scripts/annotate_manifesto.py {input.filtered_segments} {params.snpinfo_pref} {output.manifesto_table}
 
 """
 
