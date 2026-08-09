@@ -123,7 +123,7 @@ def main():
     inds = [ind]
     hmmixpath = hmmixpath if hmmixpath is not None and hmmixpath.endswith("/") else (hmmixpath + "/" if hmmixpath is not None else None)
     hmmixfiles = [f"{hmmixpath}{df[df['ID']==inds[i]]['Name'].values[0]}.txt" for i in range(len(inds))]
-    ibdmixfile = f"{ibdmixpath}{chrom}.txt" if ibdmixpath.endswith("/") else f"{ibdmixpath}/chr{chrom}.txt"
+    ibdmixfile = f"{ibdmixpath}{chrom}.txt" if ibdmixpath.endswith("/") else f"{ibdmixpath}/{chrom}.txt"
     individualID = [df[df['ID']==inds[i]]['SampleID'].values[0] for i in range(len(inds))]
     xssfile = f"{xsspref}.{chrom}.xss.npz"
 

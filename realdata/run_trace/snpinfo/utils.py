@@ -1,6 +1,7 @@
 """Utility functions for SNP info annotation."""
 import os
 import numpy as np
+from pyfaidx import Fasta
 
 class SNPINFO:
     """A class of functions to get SNP ancestral and archaic information."""
@@ -97,7 +98,7 @@ class SNPINFO:
                 continue
             if not "_".join([s[1], s[2], s[3]]) in existing_sites:
                 existing_sites.add("_".join([s[1], s[2], s[3]]))
-                geno_info["_".join([s[1], s[2], s[3]])] = [0] * len(arc_return_dict)
+                geno_info["_".join([s[1], s[2], s[3]])] = [0] * (len(arc_return_dict) + 2)
                 geno_info["_".join([s[1], s[2], s[3]])][-2] = str(s[2])
                 geno_info["_".join([s[1], s[2], s[3]])][-1] = str(s[3])
             geno_info["_".join([s[1], s[2], s[3]])][arc_return_dict[str(s[4])]] = geno_dict[str(s[5])]
@@ -141,9 +142,9 @@ class SNPINFO:
             elif "_".join([s[1], s[2], "."]) in existing_sites:
                 ginfo = geno_info["_".join([s[1], s[2], "."])]
             else:
-                out += "\t".join([9] * len(archaic_samples)) + '\n'
+                out += "\t".join([str(9)] * len(archaic_samples)) + '\n'
                 continue # missing site
-            if ginfo[4].upper() == str(s[2]) and (ginfo[5].upper() == str(s[3]) or ginfo[5] == '.'):
+            if ginfo[-2].upper() == str(s[2]) and (ginfo[-1].upper() == str(s[3]) or ginfo[-1] == '.'):
                 for ars in archaic_samples:
                     out += str(ginfo[arc_return_dict[ars]]) + '\t'
                 out = out.strip('\t') + '\n'

@@ -297,40 +297,41 @@ class SUMMARIZE:
         out = lines[0].strip('\n') + '\tnderived\tnoutgroup\tND00\tND10\tND01\tND11\tnderived_strict\tnoutgroup_strict\t'
         out += 'ND00_strict\tND10_strict\tND01_strict\tND11_strict\n'
         out1 = lines[0].strip('\n') + "\tdsnps\tdsnps_marks\tDAF_YRI\n"
-        cur_chr = lines[1].strip('\n').split('\t')[0]
-        snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
-        bcffile = str(bcfpref) + cur_chr + '.bcf'
-        snp_dict = self.parse_snpinfo_anc(snpfile)
-        for i in range(1, len(lines)):
-            s=lines[i].strip('\n').strip('\t').split('\t')
-            if not cur_chr == str(s[0]):
-                if not os.path.exists(str(bcfpref) + str(s[0]) + '.bcf'):
-                    print(f"File {bcfpref}{s[0]}.bcf does not exist, exit...")
-                    sys.exit(1)
+        if len(lines) > 1:
+            cur_chr = lines[1].strip('\n').split('\t')[0]
+            snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
+            bcffile = str(bcfpref) + cur_chr + '.bcf'
+            snp_dict = self.parse_snpinfo_anc(snpfile)
+            for i in range(1, len(lines)):
+                s=lines[i].strip('\n').strip('\t').split('\t')
+                if not cur_chr == str(s[0]):
+                    if not os.path.exists(str(bcfpref) + str(s[0]) + '.bcf'):
+                        print(f"File {bcfpref}{s[0]}.bcf does not exist, exit...")
+                        sys.exit(1)
+                    else:
+                        cur_chr = str(s[0])
+                        snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
+                        bcffile = str(bcfpref) + cur_chr + '.bcf'
+                        snp_dict = self.parse_snpinfo_anc(snpfile)
+                os.system('echo "' + str(s[0]) + "\t" + str(s[1]) + "\t" + str(s[2]) + '" > ' + str(outpref) + str(i) + 'seg.bed')
+                reg = self.get_regions_bed(str(outpref) + str(i) + "seg.bed")
+                os.system(
+                    "bcftools view -s " + str(samplename) + " -v snps -r " + str(reg) + " " + str(bcffile) + " | bcftools query -f'[%POS\t%REF\t%ALT\t%GT\n]' > "+ str(outpref) + str(i) + "seg_snps"
+                )
+                snpcount, snpcount_strict, dsnps, dsnps_freqs, dsnps_marks = self.count_snps(str(outpref) + str(i) + "seg_snps", snp_dict, hap)
+                out += lines[i].strip('\n') + '\t' + str(snpcount['nsnps']) + '\t' + str(snpcount['nout']) + '\t' + str(snpcount['ND00']) + '\t' 
+                out += str(snpcount['ND10']) + '\t' + str(snpcount['ND01']) + '\t' + str(snpcount['ND11']) + '\t' 
+                out += str(snpcount_strict['nsnps']) + '\t' + str(snpcount_strict['nout']) + '\t' 
+                out += str(snpcount_strict['ND00']) + '\t' + str(snpcount_strict['ND10']) + '\t' + str(snpcount_strict['ND01']) + '\t' + str(snpcount_strict['ND11']) + "\n"
+                dsnps_freqs = np.round(dsnps_freqs, 3)
+                if len(dsnps) > 0:
+                    out1 += lines[i].strip('\n') + '\t' + ','.join(dsnps) + '\t'
+                    out1 += ','.join(dsnps_marks) + '\t'
+                    out1 += ','.join([str(i) for i in dsnps_freqs]) + '\n'
                 else:
-                    cur_chr = str(s[0])
-                    snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
-                    bcffile = str(bcfpref) + cur_chr + '.bcf'
-                    snp_dict = self.parse_snpinfo_anc(snpfile)
-            os.system('echo "' + str(s[0]) + "\t" + str(s[1]) + "\t" + str(s[2]) + '" > ' + str(outpref) + str(i) + 'seg.bed')
-            reg = self.get_regions_bed(str(outpref) + str(i) + "seg.bed")
-            os.system(
-                "bcftools view -s " + str(samplename) + " -v snps -r " + str(reg) + " " + str(bcffile) + " | bcftools query -f'[%POS\t%REF\t%ALT\t%GT\n]' > "+ str(outpref) + str(i) + "seg_snps"
-            )
-            snpcount, snpcount_strict, dsnps, dsnps_freqs, dsnps_marks = self.count_snps(str(outpref) + str(i) + "seg_snps", snp_dict, hap)
-            out += lines[i].strip('\n') + '\t' + str(snpcount['nsnps']) + '\t' + str(snpcount['nout']) + '\t' + str(snpcount['ND00']) + '\t' 
-            out += str(snpcount['ND10']) + '\t' + str(snpcount['ND01']) + '\t' + str(snpcount['ND11']) + '\t' 
-            out += str(snpcount_strict['nsnps']) + '\t' + str(snpcount_strict['nout']) + '\t' 
-            out += str(snpcount_strict['ND00']) + '\t' + str(snpcount_strict['ND10']) + '\t' + str(snpcount_strict['ND01']) + '\t' + str(snpcount_strict['ND11']) + "\n"
-            dsnps_freqs = np.round(dsnps_freqs, 3)
-            if len(dsnps) > 0:
-                out1 += lines[i].strip('\n') + '\t' + ','.join(dsnps) + '\t'
-                out1 += ','.join(dsnps_marks) + '\t'
-                out1 += ','.join([str(i) for i in dsnps_freqs]) + '\n'
-            else:
-                out1 += lines[i].strip('\n') + '\t' + 'NA\tNA\tNA\n'
-            os.remove(str(outpref) + str(i) + 'seg.bed')
-            os.remove(str(outpref) + str(i) + "seg_snps")
+                    out1 += lines[i].strip('\n') + '\t' + 'NA\tNA\tNA\n'
+                os.remove(str(outpref) + str(i) + 'seg.bed')
+                os.remove(str(outpref) + str(i) + "seg_snps")
         outfile=open(outpref + '.txt','a')
         outfile.write(out)
         outfile.close()
@@ -389,7 +390,7 @@ class SUMMARIZE:
                 else:
                     ags.append("NA")
                     mks.append("NA")
-            out += "\t" + ",".join([str(i) for i in ags]) + "\t" + ",".join(mks) + '\n'
+            out += ",".join([str(i) for i in ags]) + "\t" + ",".join(mks) + '\n'
         outfile=open(outpref + '.txt','w')
         outfile.write(out)
         outfile.close()
