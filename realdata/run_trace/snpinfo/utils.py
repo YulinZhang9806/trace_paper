@@ -236,6 +236,9 @@ class SNPINFO:
         lines=infile.readlines()
         infile.close()
         strictmaskset = set()
+        if len(lines) < 1:
+            print(f"bcftools not working, check intermediate output {tempfile}.")
+            sys.exit(1)
         for i in range(len(lines)):
             s = lines[i].strip('\n').strip('\t').split('\t')
             strictmaskset.add("_".join([str(s[0]), str(s[1])]))
