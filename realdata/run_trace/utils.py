@@ -343,11 +343,15 @@ class SUMMARIZE:
         infile = open(snpinfo)
         lines = infile.readlines()
         infile.close()
+        col_dict = {}
+        cols = lines[0].strip('\n').strip('\t').split('\t')
+        for j in range(len(cols)):
+            col_dict[cols[j]] = j
         for i in range(1, len(lines)):
             s = lines[i].strip('\n').strip('\t').split('\t')
-            pos = int(s[1])
+            pos = int(s[col_dict["pos"]])
             if not s[-1] in ['nan', 'Not_mapped', 'NA']:
-                ag = float(s[-1])
+                ag = float(s[col_dict["mutage"]])
                 mutage[pos] = ag
         with np.load(f"{npzpref}") as data:
             t1 = data["t1s"]

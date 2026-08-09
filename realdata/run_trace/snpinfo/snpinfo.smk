@@ -2,6 +2,7 @@
 
 from utils import SNPINFO
 import numpy as np
+import tszip 
 
 
 rule snpinfo:
@@ -21,10 +22,10 @@ rule snpinfo_archaic:
     """Get SNP info for archaics given SNPs."""
     input:
         txtfile="1000g_biall_snpinfo.human_ancestor.chr{chrom}.txt",
-        archaic=paths["archaic_bcf_pref"] + ".chr{chrom}.bcf",
+        archaic=paths["archaic_bcf_pref"] + ".{chrom}.split_multiallelic.bcf",
     params:
         snpinfo="1000g_biall_snpinfo.human_ancestor.chr{chrom}",
-        archaicbcf=paths["archaic_bcf_pref"] + ".{chrom}",
+        archaicbcf=paths["archaic_bcf_pref"] + ".{chrom}.split_multiallelic",
         outpref="1000g_biall_snpinfo.human_ancestor.archaic.chr{chrom}",
     output:
         txtfile="1000g_biall_snpinfo.human_ancestor.archaic.chr{chrom}.txt",
