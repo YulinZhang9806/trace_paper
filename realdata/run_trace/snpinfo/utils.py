@@ -1,6 +1,7 @@
 """Utility functions for SNP info annotation."""
 import os
 import numpy as np
+from pyfaidx import Fasta
 
 class SNPINFO:
     """A class of functions to get SNP ancestral and archaic information."""
@@ -97,9 +98,9 @@ class SNPINFO:
                 continue
             if not "_".join([s[1], s[2], s[3]]) in existing_sites:
                 existing_sites.add("_".join([s[1], s[2], s[3]]))
-                geno_info["_".join([s[1], s[2], s[3]])] = [0, 0, 0, 0, 0, 0]
-                geno_info["_".join([s[1], s[2], s[3]])][4] = str(s[2])
-                geno_info["_".join([s[1], s[2], s[3]])][5] = str(s[3])
+                geno_info["_".join([s[1], s[2], s[3]])] = [0] * (len(arc_return_dict) + 2)
+                geno_info["_".join([s[1], s[2], s[3]])][-2] = str(s[2])
+                geno_info["_".join([s[1], s[2], s[3]])][-1] = str(s[3])
             geno_info["_".join([s[1], s[2], s[3]])][arc_return_dict[str(s[4])]] = geno_dict[str(s[5])]
         return existing_sites, geno_info
 
@@ -108,11 +109,11 @@ class SNPINFO:
         """Append archaic snp info to the existing snpinfo file.
         
         snpinfo: str, no file extension
-        archaicbcf: str, no file extension
+        archaicbcf: str, no file extension, need to have multiallelic sites split to multiple records
 
         return: new snpinfo txt file.
         """
-            
+        # chrom, pos from snpinfo file, remove header
         os.system(
             "cut -f 1,2 " + str(snpinfo) + ".txt | tail -n +2 > " + snpinfo + "allsnp"
         )
@@ -121,7 +122,7 @@ class SNPINFO:
             "bcftools query -f'[%CHROM\t%POS\t%REF\t%ALT\t%SAMPLE\t%GT\n]' -R " + snpinfo + "allsnp " + str(archaicbcf) + ".bcf" + " > " + snpinfo + "archaic_geno"
         )
         os.remove(snpinfo + "allsnp")
-        os.systme(
+        os.system(
             "bcftools query -l " + str(archaicbcf) + ".bcf" + " > " + snpinfo + "archaic_samples"
         )
         with open(snpinfo + "archaic_samples") as f:
@@ -141,18 +142,14 @@ class SNPINFO:
             elif "_".join([s[1], s[2], "."]) in existing_sites:
                 ginfo = geno_info["_".join([s[1], s[2], "."])]
             else:
-                out += "9\t9\t9\t9\n"
-                continue
-            if ginfo[4].upper() == str(s[2]) and (ginfo[5].upper() == str(s[3]) or ginfo[5] == '.'):
-                if len(str(s[5])) > 1:
-                    out += "2\t2\t2\t2\n"
-                else:
-                    out += str(ginfo[arc_return_dict['Chagyrskaya-Phalanx']]) + '\t'
-                    out += str(ginfo[arc_return_dict['AltaiNeandertal']]) + '\t'
-                    out += str(ginfo[arc_return_dict['Vindija33.19']]) + '\t'
-                    out += str(ginfo[arc_return_dict['Denisova']]) + '\n'
+                out += "\t".join([str(9)] * len(archaic_samples)) + '\n'
+                continue # missing site
+            if ginfo[-2].upper() == str(s[2]) and (ginfo[-1].upper() == str(s[3]) or ginfo[-1] == '.'):
+                for ars in archaic_samples:
+                    out += str(ginfo[arc_return_dict[ars]]) + '\t'
+                out = out.strip('\t') + '\n'
             else:
-                out += "REF_DONT_MATCH\tREF_DONT_MATCH\tREF_DONT_MATCH\tREF_DONT_MATCH\n"
+                out += "\t".join(["REF_DONT_MATCH"] * len(archaic_samples)) + '\n'
         outfile=open(outpref + '.txt','w')
         outfile.write(out)
         outfile.close()
@@ -239,6 +236,9 @@ class SNPINFO:
         lines=infile.readlines()
         infile.close()
         strictmaskset = set()
+        if len(lines) < 1:
+            print(f"bcftools not working, check intermediate output {tempfile}.")
+            sys.exit(1)
         for i in range(len(lines)):
             s = lines[i].strip('\n').strip('\t').split('\t')
             strictmaskset.add("_".join([str(s[0]), str(s[1])]))

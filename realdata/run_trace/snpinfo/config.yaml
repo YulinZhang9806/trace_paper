@@ -1,8 +1,8 @@
 analyses:
   snpinfo:
-    enable: False
+    enable: True
     chromosomes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
-    manifesto: False
+    manifesto: True
 
       
 
@@ -11,8 +11,8 @@ paths:
   1000g_bcf: "/global/scratch/users/zhangyulin9806/github/trace_paper/paths/1000g_bcf/"
   # Folder containing human ancestor fasta files, note the files need to be named as chr{chrom}.fa
   human_ancestor: "/global/scratch/users/zhangyulin9806/github/trace_paper/paths/human_ancestor/"
-  # Folder containing archaic bcf files, note the files need to have file address as {archaic_bcf_pref}.chr{chrom}.bcf
-  archaic_bcf_pref: "/global/scratch/users/zhangyulin9806/github/trace_paper/paths/archaic_bcf/highcov_archaics"
+  # Folder containing archaic bcf files, note the files need to have file address as {archaic_bcf_pref}.{chrom}.split_multiallelic.bcf
+  archaic_bcf_pref: "/global/scratch/users/zhangyulin9806/github/trace_paper/paths/archaic_bcf/individuals_highcov"
   # File containing the list of SNPs in the outgroup populations for hmmix
   hmmix_outgroup: "/global/scratch/users/zhangyulin9806/github/trace_paper/paths/hmmix_outgroup.txt"
   # 1000 Genomes strictmask file

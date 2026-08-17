@@ -21,11 +21,11 @@ TARGETS = []
 if config["analyses"]["snpinfo"]["enable"]:
     for chrom in config["analyses"]["snpinfo"]["chromosomes"]:
         TARGETS.append(
-            f"1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.mutage.chr{chrom}.txt"
+            f"1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.mutage.chr{chrom}.txt"
         )
         if config["analyses"]["snpinfo"]["manifesto"]:
             TARGETS.append(
-            f"1000g_biall_snpinfo.human_ancestor.archaic.lwkonly.outgroup.strictmask.manifesto.chr{chrom}.txt"
+            f"1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.manifesto.chr{chrom}.txt"
         )
 
 rule all:

@@ -1,6 +1,9 @@
 #!python3
 
 from utils import SNPINFO
+import numpy as np
+import tszip 
+import tskit
 
 
 rule snpinfo:
@@ -20,10 +23,10 @@ rule snpinfo_archaic:
     """Get SNP info for archaics given SNPs."""
     input:
         txtfile="1000g_biall_snpinfo.human_ancestor.chr{chrom}.txt",
-        archaic=paths["archaic_bcf_pref"] + ".chr{chrom}.bcf",
+        archaic=paths["archaic_bcf_pref"] + ".{chrom}.split_multiallelic.bcf",
     params:
         snpinfo="1000g_biall_snpinfo.human_ancestor.chr{chrom}",
-        archaicbcf=paths["archaic_bcf_pref"] + ".{chrom}",
+        archaicbcf=paths["archaic_bcf_pref"] + ".{chrom}.split_multiallelic",
         outpref="1000g_biall_snpinfo.human_ancestor.archaic.chr{chrom}",
     output:
         txtfile="1000g_biall_snpinfo.human_ancestor.archaic.chr{chrom}.txt",
@@ -40,37 +43,37 @@ rule snpinfo_afr:
         yri_poplabel = paths["YRI_sample"],
     params:
         snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.chr{chrom}",
-        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}",
+        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.yri.chr{chrom}",
     output:
-        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}.txt",
+        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.yri.chr{chrom}.txt",
     run:
-        SNPINFO().append_AFR_info(params.outpref, input.tkg_bcf, input.yri_poplabel, "AltAF_YRI", params.outpref)
+        SNPINFO().append_AFR_info(params.snpinfo, input.tkg_bcf, input.yri_poplabel, "AltAF_YRI", params.outpref)
 
 rule snpinfo_outgroup:
     """Get SNP info for whether they present in hmmix outgroup SNP list."""
     input:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}.txt",
-        outgrouopfile = paths["hmmix_outgroup"],
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.chr{chrom}.txt",
+        outgroupfile = paths["hmmix_outgroup"],
     params:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.chr{chrom}",
-        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.chr{chrom}",
+        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.chr{chrom}",
     output:
-        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}.txt",
+        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.chr{chrom}.txt",
     run:
-        SNPINFO().append_outgroup_info(params.snpinfo, input.outgrouopfile, params.outpref)
+        SNPINFO().append_outgroup_info(params.snpinfo, input.outgroupfile, params.outpref)
 
 
 rule snpinfo_strictmask:
     """Get SNP info for if in strictmask."""
     input:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}.txt",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.chr{chrom}.txt",
         strictmask = paths["strictmask"],
         bcffile = paths["1000g_bcf"] + "1000g_hg38_chr{chrom}.bcf",
     params:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.chr{chrom}",
-        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.chr{chrom}",
+        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}",
     output:
-        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}.txt",
+        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}.txt",
     run:
         SNPINFO().append_strictmask_info(
             params.snpinfo, input.strictmask, input.bcffile, params.outpref
@@ -79,14 +82,14 @@ rule snpinfo_strictmask:
 rule snpinfo_manifesto:
     """Get SNP info for if in manifesto filter."""
     input:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}.txt",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}.txt",
         manifesto = paths["manifesto_bed"] + "chr{chrom}.bed",
         bcffile = paths["1000g_bcf"] + "1000g_hg38_chr{chrom}.bcf",
     params:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}",
-        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.manifesto.chr{chrom}",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}",
+        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.manifesto.chr{chrom}",
     output:
-        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.manifesto.chr{chrom}.txt",
+        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.manifesto.chr{chrom}.txt",
     run:
         SNPINFO().append_manifesto_info(params.snpinfo, input.manifesto, input.bcffile, params.outpref)
 
@@ -110,33 +113,30 @@ rule extract_mutage:
                 print(f"Error decompressing {input.trees[i]}: {e}")
                 sys.exit(1)
             chrom = params.chrom
-            out = ""
+            out = "chromosome\tposition\tmutation_age\n"
             for tree in ts.trees():
                 for mut in tree.mutations():
                     if tree.parent(mut.node) != tskit.NULL:
-                        out += f"{chrom}\t{int(ts.site(mut.site).position) - 1}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(tree.parent(mut.node))}\n"
+                        out += f"{chrom}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(tree.parent(mut.node))}\n"
                     else:
-                        out += f"{chrom}\t{int(ts.site(mut.site).position) - 1}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(mut.node)}\n"
-            out = "chromosome\tposition\tmutation_age\n"
-            for x in a:
-                out += f"{x.chrom}\t{x.end}\t{x[3]}\n"
+                        out += f"{chrom}\t{int(ts.site(mut.site).position)}\t{tree.time(mut.node)}_{tree.time(mut.node)}\n"
             with open(output.mutage[i], 'w') as f:
                 f.write(out)
 
 rule snpinfo_mutage:
     """Get SNP info for mutage."""
     input:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}.txt",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}.txt",
         mutage = expand(
             paths["singer_trees"] + "mutage_chr{chrom}_{PPID}.txt", PPID = range(250, 300), allow_missing=True
         ),
     params:
-        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.chr{chrom}",
+        snpinfo = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.chr{chrom}",
         mutage_pref = paths["singer_trees"] + "mutage_chr{chrom}_",
         mutage_range = range(250, 300),
-        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.mutage.chr{chrom}",
+        outpref = "1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.mutage.chr{chrom}",
     output:
-        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.afr.outgroup.strictmask.mutage.chr{chrom}.txt",
+        txtfile="1000g_biall_snpinfo.human_ancestor.archaic.yri.outgroup.strictmask.mutage.chr{chrom}.txt",
     run:
         SNPINFO().append_mutage_info(
             params.snpinfo, params.mutage_pref, params.mutage_range, params.outpref

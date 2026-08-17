@@ -116,8 +116,8 @@ class SUMMARIZE:
             dden = (s[col_dict['Denisova']] in ['1','2'])
             den_missing = (s[col_dict['Denisova']] == '9')
             freqs = float(s[col_dict['AltAF_YRI']])
-            aout = False if float(s[-3]) >= 0.05 else True
-            instrict = True if int(s[-2]) == 1 else False
+            aout = False if int(s[col_dict['in_outgroup']]) == 1 else True
+            instrict = True if int(s[col_dict['in_strictmask']]) == 1 else False
             if ref == anc:
                 outdict["_".join([str(pos), ref, alt])] = ["keep", dnea, nea_missing, dden, den_missing, aout, instrict, freqs, cpg]
             elif alt == anc:
@@ -136,8 +136,8 @@ class SUMMARIZE:
 
         return: nsnps, nout, ND00, ND10, ND01, ND11, A05, AN01, AD01
         """
-        snpcount = {"nsnps":0, "nout":0, "ND00":0, "ND10":0, "ND01":0, "ND11":0, "A05":0, "AN01":0, "AD01":0}
-        snpcount_strict = {"nsnps":0, "nout":0, "ND00":0, "ND10":0, "ND01":0, "ND11":0, "A05":0, "AN01":0, "AD01":0}
+        snpcount = {"nsnps":0, "nout":0, "ND00":0, "ND10":0, "ND01":0, "ND11":0}
+        snpcount_strict = {"nsnps":0, "nout":0, "ND00":0, "ND10":0, "ND01":0, "ND11":0}
         dsnps = []
         dsnps_freqs = []
         dsnps_marks = []
@@ -283,13 +283,13 @@ class SUMMARIZE:
 
         samplename: str
         bed: str, bed file prefix of pure archaic regions for the haplotype.
-        hap: int, 1 or 2
+        hap: left or right
         snpinfo: str, snpinfo file prefix, should not include chr identifier.
         bcfpref: str, prefix of the original bcffile, should not include chr identifier.
 
         output: a txt file with archaic segment information and counts of mutations.
         """         
-        if os.path.exists(str(outpref) + ".txt") and hap != 2:
+        if os.path.exists(str(outpref) + ".txt"):
             os.remove(str(outpref) + ".txt")
         infile=open(summary)
         lines=infile.readlines()
@@ -297,39 +297,41 @@ class SUMMARIZE:
         out = lines[0].strip('\n') + '\tnderived\tnoutgroup\tND00\tND10\tND01\tND11\tnderived_strict\tnoutgroup_strict\t'
         out += 'ND00_strict\tND10_strict\tND01_strict\tND11_strict\n'
         out1 = lines[0].strip('\n') + "\tdsnps\tdsnps_marks\tDAF_YRI\n"
-        cur_chr = lines[1].strip('\n').split('\t')[0]
-        snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
-        bcffile = str(bcfpref) + cur_chr + '.bcf'
-        snp_dict = self.parse_snpinfo_anc(snpfile)
-        for i in range(1, len(lines)):
-            s=lines[i].strip('\n').strip('\t').split('\t')
-            if not cur_chr == str(s[0]):
-                if not os.path.exists(str(bcfpref) + str(s[0]) + '.bcf'):
-                    continue
+        if len(lines) > 1:
+            cur_chr = lines[1].strip('\n').split('\t')[0]
+            snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
+            bcffile = str(bcfpref) + cur_chr + '.bcf'
+            snp_dict = self.parse_snpinfo_anc(snpfile)
+            for i in range(1, len(lines)):
+                s=lines[i].strip('\n').strip('\t').split('\t')
+                if not cur_chr == str(s[0]):
+                    if not os.path.exists(str(bcfpref) + str(s[0]) + '.bcf'):
+                        print(f"File {bcfpref}{s[0]}.bcf does not exist, exit...")
+                        sys.exit(1)
+                    else:
+                        cur_chr = str(s[0])
+                        snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
+                        bcffile = str(bcfpref) + cur_chr + '.bcf'
+                        snp_dict = self.parse_snpinfo_anc(snpfile)
+                os.system('echo "' + str(s[0]) + "\t" + str(s[1]) + "\t" + str(s[2]) + '" > ' + str(outpref) + str(i) + 'seg.bed')
+                reg = self.get_regions_bed(str(outpref) + str(i) + "seg.bed")
+                os.system(
+                    "bcftools view -s " + str(samplename) + " -v snps -r " + str(reg) + " " + str(bcffile) + " | bcftools query -f'[%POS\t%REF\t%ALT\t%GT\n]' > "+ str(outpref) + str(i) + "seg_snps"
+                )
+                snpcount, snpcount_strict, dsnps, dsnps_freqs, dsnps_marks = self.count_snps(str(outpref) + str(i) + "seg_snps", snp_dict, hap)
+                out += lines[i].strip('\n') + '\t' + str(snpcount['nsnps']) + '\t' + str(snpcount['nout']) + '\t' + str(snpcount['ND00']) + '\t' 
+                out += str(snpcount['ND10']) + '\t' + str(snpcount['ND01']) + '\t' + str(snpcount['ND11']) + '\t' 
+                out += str(snpcount_strict['nsnps']) + '\t' + str(snpcount_strict['nout']) + '\t' 
+                out += str(snpcount_strict['ND00']) + '\t' + str(snpcount_strict['ND10']) + '\t' + str(snpcount_strict['ND01']) + '\t' + str(snpcount_strict['ND11']) + "\n"
+                dsnps_freqs = np.round(dsnps_freqs, 3)
+                if len(dsnps) > 0:
+                    out1 += lines[i].strip('\n') + '\t' + ','.join(dsnps) + '\t'
+                    out1 += ','.join(dsnps_marks) + '\t'
+                    out1 += ','.join([str(i) for i in dsnps_freqs]) + '\n'
                 else:
-                    cur_chr = str(s[0])
-                    snpfile = str(snpinfo) + '.' + cur_chr + '.txt'
-                    bcffile = str(bcfpref) + cur_chr + '.bcf'
-                    snp_dict = self.parse_snpinfo_anc(snpfile, arc_return_dict)
-            os.system('echo "' + str(s[0]) + "\t" + str(s[1]) + "\t" + str(s[2]) + '" > ' + str(outpref) + str(i) + 'seg.bed')
-            reg = self.get_regions_bed(str(outpref) + str(i) + "seg.bed")
-            os.system(
-                "bcftools view -s " + str(samplename) + " -v snps -r " + str(reg) + " " + str(bcffile) + " | bcftools query -f'[%POS\t%REF\t%ALT\t%GT\n]' > "+ str(outpref) + str(i) + "seg_snps"
-            )
-            snpcount, snpcount_strict, dsnps, dsnps_freqs, dsnps_marks = self.count_snps(str(outpref) + str(i) + "seg_snps", snp_dict, hap)
-            out += lines[i].strip('\n') + '\t' + str(snpcount['nsnps']) + '\t' + str(snpcount['nout']) + '\t' + str(snpcount['ND00']) + '\t' 
-            out += str(snpcount['ND10']) + '\t' + str(snpcount['ND01']) + '\t' + str(snpcount['ND11']) + '\t' 
-            out += str(snpcount_strict['nsnps']) + '\t' + str(snpcount_strict['nout']) + '\t' 
-            out += str(snpcount_strict['ND00']) + '\t' + str(snpcount_strict['ND10']) + '\t' + str(snpcount_strict['ND01']) + '\t' + str(snpcount_strict['ND11']) + "\n"
-            dsnps_freqs = np.round(dsnps_freqs, 3)
-            if len(dsnps) > 0:
-                out1 += lines[i].strip('\n') + '\t' + ','.join(dsnps) + '\t'
-                out1 += ','.join(dsnps_marks) + '\t'
-                out1 += ','.join([str(i) for i in dsnps_freqs]) + '\n'
-            else:
-                out1 += lines[i].strip('\n') + '\t' + 'NA\tNA\tNA\tNA\tNA\n'
-            os.remove(str(outpref) + str(i) + 'seg.bed')
-            os.remove(str(outpref) + str(i) + "seg_snps")
+                    out1 += lines[i].strip('\n') + '\t' + 'NA\tNA\tNA\n'
+                os.remove(str(outpref) + str(i) + 'seg.bed')
+                os.remove(str(outpref) + str(i) + "seg_snps")
         outfile=open(outpref + '.txt','a')
         outfile.write(out)
         outfile.close()
@@ -342,31 +344,25 @@ class SUMMARIZE:
         infile = open(snpinfo)
         lines = infile.readlines()
         infile.close()
+        col_dict = {}
+        cols = lines[0].strip('\n').strip('\t').split('\t')
+        for j in range(len(cols)):
+            col_dict[cols[j]] = j
         for i in range(1, len(lines)):
             s = lines[i].strip('\n').strip('\t').split('\t')
-            pos = int(s[1])
+            pos = int(s[col_dict["pos"]])
             if not s[-1] in ['nan', 'Not_mapped', 'NA']:
-                ag = float(s[-1])
+                ag = float(s[col_dict["mutage"]])
                 mutage[pos] = ag
         with np.load(f"{npzpref}") as data:
             t1 = data["t1s"]
             t2 = data["t2s"]
-            nleaves = data["nleaves"]
             treespan_phy = data["treespan_phy"]
         windowsize = treespan_phy[0][1] - treespan_phy[0][0]
-        if func == "mean":
-            func = np.mean
-        elif func == "median":
-            func = np.median
-        else:
-            sys.exit(f"Unrecognized function {func}")
-        # t1 = func(t1, axis = 0)
-        # t2 = func(t2, axis = 0)
-        # nleaves = np.nanmean(nleaves, axis = 0)
         infile=open(summary)
         lines=infile.readlines()
         infile.close()
-        out = lines[0].strip('\n') + '\tt1s\tt2s\tn_leaves\tmutages\tbranch_mark\n'
+        out = lines[0].strip('\n') + '\tt1s\tt2s\tmutages\tbranch_mark\n'
         col_dict = {}
         cols = lines[0].strip('\n').strip('\t').split('\t')
         for j in range(len(cols)):
@@ -377,8 +373,7 @@ class SUMMARIZE:
             ed = int(int(s[2]) / windowsize)
             t1_val = ",".join(t1[st:ed].astype('str'))
             t2_val = ",".join(t2[st:ed].astype('str'))
-            nlv_val = ",".join(nleaves[st:ed].astype('str'))
-            out += lines[i].strip('\n') + '\t' + str(t1_val) + '\t' + str(t2_val) + '\t' + str(nlv_val) + '\t'
+            out += lines[i].strip('\n') + '\t' + str(t1_val) + '\t' + str(t2_val) + '\t'
             muts = s[col_dict['dsnps']].split(',')
             mks = []
             ags = []
@@ -395,7 +390,7 @@ class SUMMARIZE:
                 else:
                     ags.append("NA")
                     mks.append("NA")
-            out += "\t" + ",".join([str(i) for i in ags]) + "\t" + ",".join(mks) + '\n'
+            out += ",".join([str(i) for i in ags]) + "\t" + ",".join(mks) + '\n'
         outfile=open(outpref + '.txt','w')
         outfile.write(out)
         outfile.close()
@@ -413,9 +408,6 @@ class SUMMARIZE:
         with np.load(f"{npzpref}{indlist[0]}.{chrom}.xss.npz") as data:
             treespan_phy = data["treespan_phy"]
         states = np.zeros((len(indlist), treespan_phy.shape[0]))
-        with np.load(f"{npzpref}{indlist[0]}.{chrom}.xss.npz") as data:
-            tsp = data["treespan_phy"]
-        states = np.zeros((len(indlist), tsp.shape[0]))
         for idx in range(len(indlist)):
             with np.load(f"{npzpref}{indlist[idx]}.{chrom}.xss.npz") as data:
                 try:

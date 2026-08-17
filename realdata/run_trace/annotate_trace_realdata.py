@@ -27,6 +27,7 @@ def merge_df_count_branch_mut(shared, count, count_t1t2, output, classify_group 
         mks = data.loc[i, 'dsnps_marks'].split(',')
         ons = data.loc[i, 'branch_mark'].split(',')
         yri = str(data.loc[i, 'DAF_YRI']).split(',')
+        assert len(mks) == len(ons) == len(yri)
         for j in range(len(mks)):
             if ons[j] == 'on' and mks[j] in ['ND00_strict', 'ND10_strict', 'ND01_strict', 'ND11_strict']:
                 tot += 1
@@ -122,7 +123,7 @@ def main():
     inds = [ind]
     hmmixpath = hmmixpath if hmmixpath is not None and hmmixpath.endswith("/") else (hmmixpath + "/" if hmmixpath is not None else None)
     hmmixfiles = [f"{hmmixpath}{df[df['ID']==inds[i]]['Name'].values[0]}.txt" for i in range(len(inds))]
-    ibdmixfile = f"{ibdmixpath}{chrom}.txt" if ibdmixpath.endswith("/") else f"{ibdmixpath}/chr{chrom}.txt"
+    ibdmixfile = f"{ibdmixpath}{chrom}.txt" if ibdmixpath.endswith("/") else f"{ibdmixpath}/{chrom}.txt"
     individualID = [df[df['ID']==inds[i]]['SampleID'].values[0] for i in range(len(inds))]
     xssfile = f"{xsspref}.{chrom}.xss.npz"
 
@@ -139,8 +140,7 @@ def main():
             print(f"HMMix file for individual {inds[i]} not found at {hmmixfiles[i]}. Skipping HMMix annotation.")
             prefixn = outpref + ".ibdmix"
             SUMMARIZE().append_hmmix_info(ibdmixfile, prefix + ".txt", prefixn, inference = "ibdmix", individualID = individualID[i])
-        
-    # make these inputs
+
     for i in range(len(inds)):
         hap = "left" if inds[i]%2 == 0 else "right"
         if hmmixpath is not None and os.path.exists(hmmixfiles[i]):

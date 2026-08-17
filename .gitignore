@@ -1,6 +1,11 @@
 paths/
 */results/*
 */.snakemake/*
-trace_zenodo/
+trace_zenodo/*
 sandbox/
+realdata/run_trace/snpinfo/test_workflow/
+trace_zenodo
+realdata/run_trace/snpinfo/__pycache__/
+realdata/run_trace/snpinfo/.snakemake/
+__pycache__/
 
